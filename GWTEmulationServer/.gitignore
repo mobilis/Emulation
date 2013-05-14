@@ -1,0 +1,6 @@
+/gwt-unitCache
+/.gwt
+/war/gwtemulationserver
+/war/WEB-INF/classes
+/war/WEB-INF/deploy
+/war/sessions
