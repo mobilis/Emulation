@@ -41,6 +41,7 @@ public class ScriptRunner extends XMLScriptExecutor {
 	private EmulationSession session;
 	private Map<String, String> instanceSelection;
 	private Map<String, InstanceGroupExecutorInfo> instanceGroupSelection;
+	private FileTransferManager ftm;
 	
 	public ScriptRunner(EmulationConnection emuConn, EmulationSession session, Map<String, String> instanceSelection, Map<String, InstanceGroupExecutorInfo> instanceGroupSelection) {
 		super();
@@ -48,6 +49,9 @@ public class ScriptRunner extends XMLScriptExecutor {
 		this.session = session;
 		this.instanceSelection = instanceSelection;
 		this.instanceGroupSelection = instanceGroupSelection;
+		
+		ftm = new FileTransferManager(emuConnection.getConnection());
+		FileTransferNegotiator.setServiceEnabled( emuConnection.getConnection(), true );
 	}
 
 	@Override
@@ -146,10 +150,6 @@ public class ScriptRunner extends XMLScriptExecutor {
 		
 		final String finalSendTo = new String(sendTo);
 		
-		final FileTransferManager ftm = new FileTransferManager(emuConnection.getConnection());
-		FileTransferNegotiator.setServiceEnabled( emuConnection.getConnection(), true );
-//		InBandBytestreamManager.getByteStreamManager(emuConnection.getConnection()).setStanza(StanzaType.MESSAGE);
-		
 		final CountDownLatch logTransferReceivedLatch = new CountDownLatch(1);
 		final CountDownLatch logTransferFinishedLatch = new CountDownLatch(1);
 		
@@ -170,8 +170,9 @@ public class ScriptRunner extends XMLScriptExecutor {
 								logFolder.mkdirs();
 								System.out.println("Log file transfer for instance " + instance.getAppNS() + "_" + instance.getInstanceId() + " started.");
 								IncomingFileTransfer fileTransfer = request.accept();
-//							InputStream fileInputStream = fileTransfer.recieveFile();
+
 								fileTransfer.recieveFile(new File(logPath + request.getFileName()));
+								
 								while (!fileTransfer.isDone()) {
 									System.out.println("File transfer status: " + fileTransfer.getStatus());
 									System.out.println("File transfer progress: " + fileTransfer.getProgress());
@@ -188,7 +189,7 @@ public class ScriptRunner extends XMLScriptExecutor {
 										e.printStackTrace();
 									}
 								}
-//							FileHelper.createFileFromInputStream(fileInputStream, logPath + request.getFileName());
+								
 								if (fileTransfer.getStatus().equals(Status.error)) {
 									System.err.print("Error during file transfer: " + fileTransfer.getError().getMessage());
 									if (fileTransfer.getError() != null) {
@@ -203,12 +204,6 @@ public class ScriptRunner extends XMLScriptExecutor {
 									System.out.println("File transfer finished with status: " + fileTransfer.getStatus());
 								}
 								
-//							try {
-//								fileInputStream.close();
-//							} catch (IOException e) {
-//								// TODO Auto-generated catch block
-//								e.printStackTrace();
-//							}
 							} catch (XMPPException e) {
 								System.err.println("Log file transfer for session " + session.getId() + " failed!");
 								e.printStackTrace();
